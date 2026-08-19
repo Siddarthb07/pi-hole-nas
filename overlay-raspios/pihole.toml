@@ -1,0 +1,9 @@
+# Minimal Pi-hole v6 seed so `bash basic-install.sh --unattended` does not open dialogs.
+# Copied to /etc/pihole/pihole.toml on first boot before the installer runs.
+
+[dns]
+  upstreams = [ "9.9.9.9", "149.112.112.112" ]
+  listeningMode = "LOCAL"
+
+[webserver]
+  port = "80o,443os"

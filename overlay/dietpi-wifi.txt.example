@@ -1,0 +1,24 @@
+# Optional. Copy this file onto the DietPi boot partition as dietpi-wifi.txt
+# and set AUTO_SETUP_NET_WIFI_ENABLED=1 in dietpi.txt.
+# Ethernet is preferred for Pi-hole. If both Ethernet and WiFi are enabled,
+# DietPi gives WiFi priority and disables Ethernet.
+#
+# Replace a single quote inside SSID or key with '\''
+
+# Entry 0
+# - WiFi SSID: required, case sensitive
+aWIFI_SSID[0]=''
+# - WiFi key: If no key/open, leave this blank
+aWIFI_KEY[0]=''
+# - Key type: NONE (no key/open) | WPA-PSK | WEP | WPA-EAP
+aWIFI_KEYMGR[0]='WPA-PSK'
+# - WPA-EAP options: only fill if WPA-EAP is set above
+aWIFI_PROTO[0]=''
+aWIFI_PAIRWISE[0]=''
+aWIFI_AUTH_ALG[0]=''
+aWIFI_EAP[0]=''
+aWIFI_IDENTITY[0]=''
+aWIFI_PASSWORD[0]=''
+aWIFI_PHASE1[0]=''
+aWIFI_PHASE2[0]=''
+aWIFI_CERT[0]=''

@@ -1,0 +1,28 @@
+# Keys applied onto the DietPi boot partition dietpi.txt by apply-overlay.ps1
+# One KEY=value per line. Lines starting with # are ignored.
+# AUTO_SETUP_INSTALL_SOFTWARE_ID is space-separated IDs on one line (DietPi current format).
+
+AUTO_SETUP_GLOBAL_PASSWORD=dietpi
+AUTO_SETUP_LOCALE=C.UTF-8
+AUTO_SETUP_KEYBOARD_LAYOUT=us
+AUTO_SETUP_TIMEZONE=Asia/Kolkata
+
+AUTO_SETUP_NET_ETHERNET_ENABLED=1
+AUTO_SETUP_NET_WIFI_ENABLED=0
+AUTO_SETUP_NET_WIFI_COUNTRY_CODE=IN
+AUTO_SETUP_NET_HOSTNAME=rpi
+
+# Convert the first DHCP lease into a static address so per-PC DNS does not drift.
+# Override with AUTO_SETUP_NET_USESTATIC=1 and STATIC_* values if you want a chosen IP.
+AUTO_SETUP_DHCP_TO_STATIC=1
+
+AUTO_SETUP_BOOT_WAIT_FOR_NETWORK=1
+AUTO_SETUP_SSH_SERVER_INDEX=-2
+AUTO_SETUP_WEB_SERVER_INDEX=-2
+AUTO_SETUP_CUSTOM_SCRIPT_EXEC=0
+
+# 93 Pi-hole, 96 Samba Server, 105 OpenSSH Server
+AUTO_SETUP_INSTALL_SOFTWARE_ID=93 96 105
+
+AUTO_SETUP_AUTOMATED=1
+SURVEY_OPTED_IN=0
