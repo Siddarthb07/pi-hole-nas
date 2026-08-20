@@ -150,7 +150,27 @@ The share is available to any PC on the LAN. It is separate from ad blocking.
 
 If a USB disk was plugged in and already formatted, files live on that disk. Otherwise they live on the SD card (small/home files only).
 
-## 8. Optional later: whole-house blocking
+## 8. Optional: 16x2 I2C LCD stats
+
+Wire VCC/GND/SDA/SCL, then **SSH only**:
+
+```bash
+ssh sid@192.168.1.30
+curl -fsSL https://raw.githubusercontent.com/Siddarthb07/pi-hole-nas/master/lcd-stats/install.sh | sudo bash
+```
+
+Rotates four screens (2 metrics each):
+
+| Category | Line 1 | Line 2 |
+|----------|--------|--------|
+| Pi-hole | Block % today | Queries today |
+| System | CPU temperature | RAM used % |
+| NAS | Free space | Samba OK/DOWN |
+| Network | IPv4 | Gateway OK/DOWN |
+
+Details: [`lcd-stats/README.md`](lcd-stats/README.md).
+
+## 9. Optional later: whole-house blocking
 
 If you ever want every device filtered, set the router’s LAN DNS to the Pi’s IP. That is not part of this setup.
 

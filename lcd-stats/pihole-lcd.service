@@ -1,0 +1,18 @@
+[Unit]
+Description=16x2 I2C LCD stats for Pi-hole + NAS
+After=network-online.target smbd.service pihole-FTL.service
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=root
+WorkingDirectory=/opt/pi-hole-nas-lcd
+Environment=LCD_ADDRESS=0x27
+Environment=LCD_HOLD=5
+Environment=NAS_PATH=/srv/nas
+ExecStart=/opt/pi-hole-nas-lcd/venv/bin/python /opt/pi-hole-nas-lcd/lcd_stats.py
+Restart=always
+RestartSec=5
+
+[Install]
+WantedBy=multi-user.target
