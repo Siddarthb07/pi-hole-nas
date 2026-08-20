@@ -2,8 +2,8 @@
 """Rotate Pi-hole / system / NAS / network stats on a 16x2 I2C LCD.
 
 Screens (2 metrics each):
-  1 Pi-hole  — block % today, queries today
-  2 System   — CPU temp C, RAM used %
+  1 Pi-hole  — blocked % today, queries today
+  2 System   — CPU temp C, memory used %
   3 NAS      — free space on share, Samba up/down
   4 Network  — IPv4 address, gateway reachable
 
@@ -14,26 +14,23 @@ Env (optional):
   LCD_ROWS=2
   LCD_HOLD=5         # seconds per screen
   NAS_PATH=/srv/nas
-  FTL_HOST=127.0.0.1
-  FTL_PORT=4711
   DRY_RUN=1          # print to stdout, no hardware
 """
 
 from __future__ import annotations
 
+import json
 import os
 import re
-import socket
 import subprocess
 import time
 from pathlib import Path
+from typing import Any
 
 COLS = int(os.environ.get("LCD_COLS", "16"))
 ROWS = int(os.environ.get("LCD_ROWS", "2"))
 HOLD = float(os.environ.get("LCD_HOLD", "5"))
 NAS_PATH = os.environ.get("NAS_PATH", "/srv/nas")
-FTL_HOST = os.environ.get("FTL_HOST", "127.0.0.1")
-FTL_PORT = int(os.environ.get("FTL_PORT", "4711"))
 DRY_RUN = os.environ.get("DRY_RUN", "0") == "1"
 LCD_ADDRESS = int(os.environ.get("LCD_ADDRESS", "0x27"), 0)
 LCD_BUS = int(os.environ.get("LCD_BUS", "1"))
@@ -54,32 +51,23 @@ def run(cmd: list[str], timeout: float = 2.0) -> str:
         return ""
 
 
-def ftl_stats() -> dict[str, str]:
-    """Talk to FTL telnet API (no web password)."""
-    data: dict[str, str] = {}
+def pihole_summary() -> dict[str, Any]:
+    """Pi-hole v6 local CLI API (no web password / no port 4711)."""
+    raw = run(["pihole", "api", "stats/summary"], timeout=4.0)
+    if not raw:
+        raw = run(["sudo", "-n", "pihole", "api", "stats/summary"], timeout=4.0)
+    if not raw:
+        return {}
+    # CLI may print auth chatter before JSON
+    start = raw.find("{")
+    end = raw.rfind("}")
+    if start < 0 or end <= start:
+        return {}
     try:
-        with socket.create_connection((FTL_HOST, FTL_PORT), timeout=1.5) as sock:
-            sock.sendall(b">stats\n>quit\n")
-            sock.settimeout(1.5)
-            buf = b""
-            while True:
-                try:
-                    chunk = sock.recv(4096)
-                except socket.timeout:
-                    break
-                if not chunk:
-                    break
-                buf += chunk
-                if b"---EOT---" in buf or b">quit" in buf:
-                    break
-        for line in buf.decode("utf-8", errors="replace").splitlines():
-            if " " not in line or line.startswith(">"):
-                continue
-            key, _, val = line.partition(" ")
-            data[key.strip()] = val.strip()
-    except OSError:
-        pass
-    return data
+        data = json.loads(raw[start : end + 1])
+    except json.JSONDecodeError:
+        return {}
+    return data if isinstance(data, dict) else {}
 
 
 def fmt_count(n: float | int) -> str:
@@ -92,17 +80,19 @@ def fmt_count(n: float | int) -> str:
 
 
 def screen_pihole() -> tuple[str, str]:
-    stats = ftl_stats()
+    data = pihole_summary()
+    queries = data.get("queries") if isinstance(data.get("queries"), dict) else {}
+    pct = queries.get("percent_blocked")
+    total = queries.get("total")
     try:
-        pct = float(stats.get("ads_percentage_today", "nan"))
-        line1 = f"Block {pct:.0f}%" if pct == pct else "Block --%"
-    except ValueError:
-        line1 = "Block --%"
+        pct_f = float(pct)
+        line1 = f"Blocked {pct_f:.0f}%"
+    except (TypeError, ValueError):
+        line1 = "Blocked --%"
     try:
-        q = float(stats.get("dns_queries_today", "nan"))
-        line2 = f"Q {fmt_count(q)}" if q == q else "Q --"
-    except ValueError:
-        line2 = "Q --"
+        line2 = f"Queries {fmt_count(float(total))}"
+    except (TypeError, ValueError):
+        line2 = "Queries --"
     return line1, line2
 
 
@@ -136,7 +126,7 @@ def ram_used_pct() -> str:
 
 
 def screen_system() -> tuple[str, str]:
-    return f"CPU {cpu_temp_c()}", f"RAM {ram_used_pct()}"
+    return f"Temp {cpu_temp_c()}", f"Memory {ram_used_pct()}"
 
 
 def fmt_bytes(n: int) -> str:
@@ -158,13 +148,13 @@ def nas_free() -> str:
         return "--"
 
 
-def smb_ok() -> str:
+def samba_ok() -> str:
     out = run(["systemctl", "is-active", "smbd"])
     return "OK" if out == "active" else "DOWN"
 
 
 def screen_nas() -> tuple[str, str]:
-    return f"NAS {nas_free()} free", f"SMB {smb_ok()}"
+    return f"Free {nas_free()}", f"Samba {samba_ok()}"
 
 
 def primary_ipv4() -> str:
@@ -181,22 +171,22 @@ def default_gateway() -> str:
     return m.group(1) if m else ""
 
 
-def gateway_ok() -> str:
+def gateway_status() -> str:
     gw = default_gateway()
     if not gw:
-        return "NO GW"
+        return "Gateway none"
     # 1 packet, 1s wait
     rc = subprocess.call(
         ["ping", "-c", "1", "-W", "1", gw],
         stdout=subprocess.DEVNULL,
         stderr=subprocess.DEVNULL,
     )
-    return "GW OK" if rc == 0 else "GW DOWN"
+    return "Gateway OK" if rc == 0 else "Gateway DOWN"
 
 
 def screen_network() -> tuple[str, str]:
     ip = primary_ipv4()
-    return ip[:COLS], gateway_ok()
+    return ip[:COLS], gateway_status()
 
 
 SCREENS = (

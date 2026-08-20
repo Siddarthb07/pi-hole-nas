@@ -163,8 +163,8 @@ Rotates four screens (2 metrics each):
 
 | Category | Line 1 | Line 2 |
 |----------|--------|--------|
-| Pi-hole | Block % today | Queries today |
-| System | CPU temperature | RAM used % |
+| Pi-hole | Blocked % today | Queries today |
+| System | Temperature | Memory used % |
 | NAS | Free space | Samba OK/DOWN |
 | Network | IPv4 | Gateway OK/DOWN |
 
