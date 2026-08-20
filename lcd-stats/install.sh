@@ -36,11 +36,10 @@ modprobe i2c-dev 2>/dev/null || true
 if [[ ! -e /dev/i2c-1 ]]; then
 	echo ""
 	echo "I2C device /dev/i2c-1 not present yet."
-	echo "Reboot once, then run this same command again over SSH:"
-	echo "  curl -fsSL https://raw.githubusercontent.com/Siddarthb07/pi-hole-nas/master/lcd-stats/install.sh | sudo bash"
-	echo ""
-	read -r -p "Reboot now? [y/N] " ans || true
-	if [[ "${ans:-}" =~ ^[Yy]$ ]]; then
+	echo "Rebooting in 5s so I2C comes up. Re-run the same curl|bash after login."
+	echo "To skip reboot: REBOOT=0 curl ... | sudo bash"
+	if [[ "${REBOOT:-1}" == "1" ]]; then
+		sleep 5
 		systemctl reboot
 	fi
 	exit 0
