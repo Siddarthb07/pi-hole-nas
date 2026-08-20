@@ -14,7 +14,7 @@ Env (optional):
   LCD_ROWS=2
   LCD_HOLD=5         # seconds per screen
   NAS_PATH=/srv/nas
-  LCD_UPSIDE_DOWN=1  # default on: swap rows + reverse chars for 180° mount
+  LCD_UPSIDE_DOWN=0  # set to 1 if the panel is mounted upside down
   DRY_RUN=1          # print to stdout, no hardware
 """
 
@@ -36,7 +36,7 @@ DRY_RUN = os.environ.get("DRY_RUN", "0") == "1"
 LCD_ADDRESS = int(os.environ.get("LCD_ADDRESS", "0x27"), 0)
 LCD_BUS = int(os.environ.get("LCD_BUS", "1"))
 # Mounted upside down: reverse each line and swap row 0/1 so reading order is correct.
-LCD_UPSIDE_DOWN = os.environ.get("LCD_UPSIDE_DOWN", "1") not in ("0", "false", "False", "no", "NO")
+LCD_UPSIDE_DOWN = os.environ.get("LCD_UPSIDE_DOWN", "0") in ("1", "true", "True", "yes", "YES")
 
 
 def clip(text: str, width: int = COLS) -> str:

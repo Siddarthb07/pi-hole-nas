@@ -10,7 +10,7 @@ WorkingDirectory=/opt/pi-hole-nas-lcd
 Environment=LCD_ADDRESS=0x27
 Environment=LCD_HOLD=5
 Environment=NAS_PATH=/srv/nas
-Environment=LCD_UPSIDE_DOWN=1
+Environment=LCD_UPSIDE_DOWN=0
 ExecStart=/opt/pi-hole-nas-lcd/venv/bin/python /opt/pi-hole-nas-lcd/lcd_stats.py
 Restart=always
 RestartSec=5

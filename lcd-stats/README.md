@@ -33,7 +33,7 @@ Gateway OK
 
 Pi-hole numbers come from `pihole api stats/summary` (v6). Old FTL port 4711 is not used.
 
-`LCD_UPSIDE_DOWN=1` (default): swaps the two rows and reverses each line so text reads correctly when the module is mounted upside down. Set `LCD_UPSIDE_DOWN=0` if the panel faces the normal way.
+`LCD_UPSIDE_DOWN=0` (default): normal orientation. Set `LCD_UPSIDE_DOWN=1` if the panel is mounted upside down (swaps rows and reverses each line).
 
 ## Wire (once)
 
