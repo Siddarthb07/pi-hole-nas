@@ -53,8 +53,8 @@ git clone --depth 1 --branch "$BRANCH" "$REPO_URL" "$TMP/repo"
 SRC="$TMP/repo/lcd-stats"
 
 mkdir -p "$INSTALL_DIR"
-cp "$SRC/lcd_stats.py" "$SRC/requirements.txt" "$INSTALL_DIR/"
-chmod 755 "$INSTALL_DIR/lcd_stats.py"
+cp "$SRC/lcd_stats.py" "$SRC/requirements.txt" "$SRC/diagnose.sh" "$INSTALL_DIR/"
+chmod 755 "$INSTALL_DIR/lcd_stats.py" "$INSTALL_DIR/diagnose.sh"
 
 if [[ ! -d "$INSTALL_DIR/venv" ]]; then
 	python3 -m venv "$INSTALL_DIR/venv"
@@ -126,5 +126,33 @@ systemctl --no-pager --full status pihole-lcd.service || true
 echo ""
 echo "Done. LCD should rotate: Pi-hole → System → NAS → Network."
 echo "Logs: journalctl -u pihole-lcd -f"
-echo "Dry run: DRY_RUN=1 ${INSTALL_DIR}/venv/bin/python ${INSTALL_DIR}/lcd_stats.py"
+echo "Dry run: DRY_RUN=1 LCD_UPSIDE_DOWN=0 ${INSTALL_DIR}/venv/bin/python ${INSTALL_DIR}/lcd_stats.py"
+echo "Diagnose: bash ${INSTALL_DIR}/diagnose.sh  (after copy) or:"
+echo "  curl -fsSL https://raw.githubusercontent.com/Siddarthb07/pi-hole-nas/master/lcd-stats/diagnose.sh | bash"
 echo "Stop:    systemctl stop pihole-lcd"
+
+# Also drop diagnose next to the app
+cp "$SRC/diagnose.sh" "$INSTALL_DIR/diagnose.sh" 2>/dev/null || true
+chmod 755 "$INSTALL_DIR/diagnose.sh" 2>/dev/null || true
+
+# Quick self-check: fail loudly if Pi-hole stats still empty
+if ! "$INSTALL_DIR/venv/bin/python" - <<'PY'
+import os, sys
+sys.path.insert(0, "/opt/pi-hole-nas-lcd")
+os.chdir("/opt/pi-hole-nas-lcd")
+# import from installed file
+import importlib.util
+spec = importlib.util.spec_from_file_location("lcd_stats", "/opt/pi-hole-nas-lcd/lcd_stats.py")
+mod = importlib.util.module_from_spec(spec)
+spec.loader.exec_module(mod)
+data = mod.pihole_summary()
+q = data.get("queries") if isinstance(data.get("queries"), dict) else {}
+print("pihole_summary keys:", list(data.keys()))
+print("queries:", q)
+sys.exit(0 if q else 1)
+PY
+then
+	echo ""
+	echo "WARNING: Pi-hole stats still empty. Run: sudo pihole api stats/summary"
+	echo "If that fails, Pi-hole is not healthy. LCD will show Blocked --% until it works."
+fi

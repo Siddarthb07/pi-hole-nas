@@ -46,22 +46,21 @@ def clip(text: str, width: int = COLS) -> str:
     return text.ljust(width)
 
 
-def run(cmd: list[str], timeout: float = 2.0) -> str:
+def run(cmd: list[str], timeout: float = 2.0, *, merge_err: bool = False) -> str:
     try:
-        out = subprocess.check_output(cmd, stderr=subprocess.DEVNULL, timeout=timeout)
+        out = subprocess.check_output(
+            cmd,
+            stderr=subprocess.STDOUT if merge_err else subprocess.DEVNULL,
+            timeout=timeout,
+        )
         return out.decode("utf-8", errors="replace").strip()
     except (subprocess.SubprocessError, FileNotFoundError, OSError):
         return ""
 
 
-def pihole_summary() -> dict[str, Any]:
-    """Pi-hole v6 local CLI API (no web password / no port 4711)."""
-    raw = run(["pihole", "api", "stats/summary"], timeout=4.0)
-    if not raw:
-        raw = run(["sudo", "-n", "pihole", "api", "stats/summary"], timeout=4.0)
+def _extract_json(raw: str) -> dict[str, Any]:
     if not raw:
         return {}
-    # CLI may print auth chatter before JSON
     start = raw.find("{")
     end = raw.rfind("}")
     if start < 0 or end <= start:
@@ -71,6 +70,77 @@ def pihole_summary() -> dict[str, Any]:
     except json.JSONDecodeError:
         return {}
     return data if isinstance(data, dict) else {}
+
+
+def _http_json(method: str, url: str, body: dict[str, Any] | None = None, headers: dict[str, str] | None = None) -> dict[str, Any]:
+    import ssl
+    import urllib.error
+    import urllib.request
+
+    data = None
+    hdrs = {"Accept": "application/json", "Content-Type": "application/json"}
+    if headers:
+        hdrs.update(headers)
+    if body is not None:
+        data = json.dumps(body).encode("utf-8")
+    req = urllib.request.Request(url, data=data, headers=hdrs, method=method)
+    ctx = ssl._create_unverified_context()  # noqa: S323 — local Pi-hole HTTPS
+    try:
+        with urllib.request.urlopen(req, timeout=3, context=ctx) as resp:
+            return _extract_json(resp.read().decode("utf-8", errors="replace"))
+    except (urllib.error.URLError, TimeoutError, OSError):
+        return {}
+
+
+def pihole_summary() -> dict[str, Any]:
+    """Pi-hole v6 stats: CLI first, then REST with /etc/pihole/cli_pw."""
+    cli_cmds = [
+        ["/usr/local/bin/pihole", "api", "stats/summary"],
+        ["/usr/local/bin/pihole", "api", "/api/stats/summary"],
+        ["pihole", "api", "stats/summary"],
+        ["pihole", "api", "/api/stats/summary"],
+    ]
+    for cmd in cli_cmds:
+        data = _extract_json(run(cmd, timeout=6.0, merge_err=True))
+        if isinstance(data.get("queries"), dict):
+            return data
+
+    pw = ""
+    for path in ("/etc/pihole/cli_pw", "/etc/pihole/cli_pw.sha"):
+        try:
+            # cli_pw is plaintext for local API; ignore .sha if present as binary
+            if path.endswith(".sha"):
+                continue
+            pw = Path(path).read_text(encoding="utf-8", errors="replace").strip()
+            if pw:
+                break
+        except OSError:
+            continue
+
+    bases = [
+        "http://127.0.0.1",
+        "http://127.0.0.1:8080",
+        "https://127.0.0.1",
+        "http://localhost",
+        "http://localhost:8080",
+    ]
+    for base in bases:
+        sid = ""
+        if pw:
+            auth = _http_json("POST", f"{base}/api/auth", {"password": pw})
+            session = auth.get("session") if isinstance(auth.get("session"), dict) else auth
+            sid = str(session.get("sid") or "")
+        # Try with SID header, then without (localAPIauth may be off)
+        headers = {"X-FTL-SID": sid, "sid": sid} if sid else None
+        data = _http_json("GET", f"{base}/api/stats/summary", headers=headers)
+        if isinstance(data.get("queries"), dict):
+            return data
+        if sid:
+            data = _http_json("GET", f"{base}/api/stats/summary?sid={sid}")
+            if isinstance(data.get("queries"), dict):
+                return data
+
+    return {}
 
 
 def fmt_count(n: float | int) -> str:
