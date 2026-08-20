@@ -4,10 +4,36 @@ Rotates four screens (2 metrics each, ~5s):
 
 | Screen | Line 1 | Line 2 |
 |--------|--------|--------|
-| Pi-hole | Block % today | Queries today |
-| System | CPU temperature | RAM used % |
-| NAS | Free space on share | Samba OK/DOWN |
+| Pi-hole | Blocked % today | Queries today |
+| System | Temperature | Memory used % |
+| NAS | Free space | Samba OK/DOWN |
 | Network | IPv4 address | Gateway OK/DOWN |
+
+Example:
+
+```text
+Blocked 42%
+Queries 12.4k
+```
+
+```text
+Temp 48C
+Memory 35%
+```
+
+```text
+Free 128G
+Samba OK
+```
+
+```text
+192.168.1.30
+Gateway OK
+```
+
+Pi-hole numbers come from `pihole api stats/summary` (v6). Old FTL port 4711 is not used.
+
+`LCD_UPSIDE_DOWN=1` (default): swaps the two rows and reverses each line so text reads correctly when the module is mounted upside down. Set `LCD_UPSIDE_DOWN=0` if the panel faces the normal way.
 
 ## Wire (once)
 
@@ -34,7 +60,7 @@ curl -fsSL https://raw.githubusercontent.com/Siddarthb07/pi-hole-nas/master/lcd-
 
 What it does: enables I2C, installs Python deps, clones this repo’s `lcd-stats`, detects the backpack address (`0x27` / `0x3f`), installs and starts `pihole-lcd.service`.
 
-If I2C was just enabled and `/dev/i2c-1` is missing, it asks to reboot. After reboot, run the same `curl ... | sudo bash` again.
+If I2C was just enabled and `/dev/i2c-1` is missing, it reboots. After reboot, run the same `curl ... | sudo bash` again.
 
 Force address / hold time:
 
@@ -49,6 +75,13 @@ sudo i2cdetect -y 1
 systemctl status pihole-lcd
 journalctl -u pihole-lcd -f
 sudo systemctl restart pihole-lcd
+sudo pihole api stats/summary
 DRY_RUN=1 /opt/pi-hole-nas-lcd/venv/bin/python /opt/pi-hole-nas-lcd/lcd_stats.py
 sudo systemctl stop pihole-lcd
+```
+
+## Update an existing install over SSH
+
+```bash
+curl -fsSL https://raw.githubusercontent.com/Siddarthb07/pi-hole-nas/master/lcd-stats/install.sh | sudo bash
 ```

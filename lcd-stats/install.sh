@@ -108,6 +108,7 @@ WorkingDirectory=${INSTALL_DIR}
 Environment=LCD_ADDRESS=${ADDR}
 Environment=LCD_HOLD=${HOLD}
 Environment=NAS_PATH=${NAS_PATH}
+Environment=LCD_UPSIDE_DOWN=${LCD_UPSIDE_DOWN:-1}
 ExecStart=${INSTALL_DIR}/venv/bin/python ${INSTALL_DIR}/lcd_stats.py
 Restart=always
 RestartSec=5

@@ -14,6 +14,7 @@ Env (optional):
   LCD_ROWS=2
   LCD_HOLD=5         # seconds per screen
   NAS_PATH=/srv/nas
+  LCD_UPSIDE_DOWN=1  # default on: swap rows + reverse chars for 180° mount
   DRY_RUN=1          # print to stdout, no hardware
 """
 
@@ -34,6 +35,8 @@ NAS_PATH = os.environ.get("NAS_PATH", "/srv/nas")
 DRY_RUN = os.environ.get("DRY_RUN", "0") == "1"
 LCD_ADDRESS = int(os.environ.get("LCD_ADDRESS", "0x27"), 0)
 LCD_BUS = int(os.environ.get("LCD_BUS", "1"))
+# Mounted upside down: reverse each line and swap row 0/1 so reading order is correct.
+LCD_UPSIDE_DOWN = os.environ.get("LCD_UPSIDE_DOWN", "1") not in ("0", "false", "False", "no", "NO")
 
 
 def clip(text: str, width: int = COLS) -> str:
@@ -215,17 +218,22 @@ class Display:
 
     def show(self, line1: str, line2: str) -> None:
         a, b = clip(line1), clip(line2)
+        if LCD_UPSIDE_DOWN:
+            # 180° mount: physical top is LCD row 1; left is right → reverse both.
+            top, bottom = b[::-1], a[::-1]
+        else:
+            top, bottom = a, b
         if self.lcd is None:
             print(f"+{'-' * COLS}+")
-            print(f"|{a}|")
-            print(f"|{b}|")
+            print(f"|{top}|")
+            print(f"|{bottom}|")
             print(f"+{'-' * COLS}+")
             return
         self.lcd.clear()
         self.lcd.cursor_pos = (0, 0)
-        self.lcd.write_string(a)
+        self.lcd.write_string(top)
         self.lcd.cursor_pos = (1, 0)
-        self.lcd.write_string(b)
+        self.lcd.write_string(bottom)
 
     def close(self) -> None:
         if self.lcd is not None:
