@@ -174,6 +174,23 @@ Details: [`lcd-stats/README.md`](lcd-stats/README.md).
 
 If you ever want every device filtered, set the router’s LAN DNS to the Pi’s IP. That is not part of this setup.
 
+## 10. Optional: wake PC + trade_bot + Tailscale remote
+
+Pi wakes your Windows PC before market open and starts **trade_bot** via SSH. Tailscale on the Pi lets you run the same wake flow from your phone.
+
+Full guide: [`orchestrator/README.md`](orchestrator/README.md)
+
+Quick start on the Pi:
+
+```bash
+curl -fsSL https://raw.githubusercontent.com/Siddarthb07/pi-hole-nas/master/orchestrator/install.sh | sudo bash
+sudo nano /etc/pi-hole-nas-orchestrator.conf
+```
+
+On Windows (Admin PowerShell): `orchestrator/windows/enable-wol.ps1`, `enable-openssh.ps1`, `install-pi-ssh-key.ps1`.
+
+Tailscale: [`orchestrator/tailscale/README.md`](orchestrator/tailscale/README.md).
+
 ## If something fails
 
 - Raspberry Pi OS log: `/var/log/pi-hole-nas-firstboot.log`
