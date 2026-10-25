@@ -1,0 +1,10 @@
+[Unit]
+Description=Wake PC before NSE open (08:45 IST weekdays)
+
+[Timer]
+OnCalendar=Mon-Fri *-*-* 08:45:00
+Persistent=true
+Unit=wake-stack.service
+
+[Install]
+WantedBy=timers.target

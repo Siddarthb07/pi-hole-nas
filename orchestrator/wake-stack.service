@@ -1,0 +1,12 @@
+[Unit]
+Description=Wake Windows PC and start trade_bot stack
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=oneshot
+ExecStart=/opt/pi-hole-nas-orchestrator/wake_stack.sh
+Nice=10
+
+[Install]
+WantedBy=multi-user.target

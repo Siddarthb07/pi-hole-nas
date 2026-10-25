@@ -1,0 +1,25 @@
+# Copy to /etc/pi-hole-nas-orchestrator.conf on the Pi after install.
+# All times assume Pi timezone is Asia/Kolkata (timedatectl set-timezone Asia/Kolkata).
+
+# --- Windows PC (trade_bot host) ---
+PC_IP="192.168.1.50"
+PC_MAC="aa:bb:cc:dd:ee:ff"
+PC_USER="siddu"
+PC_TRADE_BOT_PATH="C:/Users/siddu/Projects/trade_bot"
+
+# SSH key the Pi uses to log into Windows OpenSSH (created by install.sh if missing)
+SSH_KEY="/root/.ssh/pc_wake"
+
+# WOL broadcast (usually your LAN broadcast, e.g. 192.168.1.255)
+WOL_BROADCAST="192.168.1.255"
+
+# How long to wait after WOL before giving up (seconds)
+PING_TIMEOUT=120
+SSH_TIMEOUT=180
+HEALTH_TIMEOUT=300
+
+# Stacks to start (space-separated). Currently only trade_bot is wired.
+STACKS="trade_bot"
+
+# trade_bot compose project directory on the PC (same as PC_TRADE_BOT_PATH)
+TRADE_BOT_PATH="${PC_TRADE_BOT_PATH}"

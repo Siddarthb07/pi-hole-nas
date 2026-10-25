@@ -1,0 +1,11 @@
+[Unit]
+Description=Wake PC before US cash open (~19:00 IST; adjust for DST)
+
+[Timer]
+# US 9:30 AM Eastern ≈ 19:00 IST (EDT) / 20:00 IST (EST). Edit after Nov/Mar clock changes.
+OnCalendar=Mon-Fri *-*-* 19:00:00
+Persistent=true
+Unit=wake-stack.service
+
+[Install]
+WantedBy=timers.target
